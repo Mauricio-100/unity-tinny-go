@@ -5,34 +5,47 @@ async function jsonFetch<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      ...(init && init.headers)
+      ...(init?.headers || {})
     }
   });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`HTTP ${res.status}: ${detail}`);
-  }
+  if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
 export const api = {
-  health: () => jsonFetch("/health"),
-  version: () => jsonFetch("/version"),
-  transpile: (source: string) =>
-    jsonFetch("/transpile", { method: "POST", body: JSON.stringify({ source }) }),
-  explain: (source: string) =>
-    jsonFetch("/explain", { method: "POST", body: JSON.stringify({ source }) }),
-  run: (source: string, sandbox = true, allow: string[] = ["print"]) =>
-    jsonFetch("/run", { method: "POST", body: JSON.stringify({ source, sandbox, allow }) }),
-  build: (source: string, filename = "out.py") =>
-    jsonFetch("/build", { method: "POST", body: JSON.stringify({ source, filename }) }),
-  publish: (name: string, version: string, source: string, metadata: Record<string, any> = {}) =>
-    jsonFetch("/publish", { method: "POST", body: JSON.stringify({ name, version, source, metadata }) }),
+  // Auth
+  signup: (email: string, password: string) =>
+    jsonFetch("/signup", { method: "POST", body: JSON.stringify({ email, password }) }),
+  login: (email: string, password: string) =>
+    jsonFetch("/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+  verifyEmail: (email: string, otp: string) =>
+    jsonFetch("/verify-email", { method: "POST", body: JSON.stringify({ email, otp }) }),
+  recover: (email: string) =>
+    jsonFetch("/recover", { method: "POST", body: JSON.stringify({ email }) }),
+  me: (token: string) =>
+    jsonFetch("/me", { headers: { Authorization: `Bearer ${token}` } }),
+
+  // Paquets
+  publish: (name: string, version: string, source: string, metadata: any, token: string) =>
+    jsonFetch("/publish", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ name, version, source, metadata })
+    }),
   packages: () => jsonFetch("/packages"),
   packageInfo: (name: string, version: string) =>
-    jsonFetch(`/package/${encodeURIComponent(name)}/${encodeURIComponent(version)}`),
-  packageSource: (name: string, version: string) =>
-    jsonFetch(`/package/${encodeURIComponent(name)}/${encodeURIComponent(version)}/source`),
-  packagePython: (name: string, version: string) =>
-    jsonFetch(`/package/${encodeURIComponent(name)}/${encodeURIComponent(version)}/python`)
+    jsonFetch(`/package/${name}/${version}`),
+  packageDownload: (name: string, version: string) =>
+    jsonFetch(`/package/${name}/${version}/download`),
+  downloadStats: () => jsonFetch("/stats/downloads"),
+
+  // Transpileur
+  transpile: (source: string) =>
+    jsonFetch("/transpile", { method: "POST", body: JSON.stringify({ source }) }),
+  run: (source: string) =>
+    jsonFetch("/run", { method: "POST", body: JSON.stringify({ source }) }),
+  explain: (source: string) =>
+    jsonFetch("/explain", { method: "POST", body: JSON.stringify({ source }) }),
+  build: (source: string, filename = "out.py") =>
+    jsonFetch("/build", { method: "POST", body: JSON.stringify({ source, filename }) })
 };
