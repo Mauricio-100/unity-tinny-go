@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { api } from "../src/lib/api";
+import { api } from "./lib/api";
+
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
