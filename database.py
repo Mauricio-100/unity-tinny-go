@@ -1,10 +1,11 @@
-import psycopg2
+import psycopg
 
-def get_connection():
-    return psycopg2.connect(
+def get_conn():
+    return psycopg.connect(
         dbname="gopu",
         user="ceose",
         password="agentic",
         host="sources-dl87.onrender.com",
-        port="5432"
+        port=5432,
+        autocommit=True
     )
